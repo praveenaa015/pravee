@@ -1,0 +1,284 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os;
+os.listdir('/kaggle/input/')
+retail=pd.read_csv('/kaggle/input/retail-sales-dataset/retail_sales_dataset.csv') 
+print("Dimension of the dataset:", retail.shape)
+print("Size of the dataset: ", retail.size)
+print("Columns in the dataset: ", retail.keys())
+print("information of the dataset: \n",retail.info())
+print("After removing duplicates: \n",retail.drop_duplicates(inplace=True)) #cleaning the data by checking the duplicates
+print("Size of the dataset after removing duplicates: \n",retail.size)
+retail.describe()
+print(retail[['Age', 'Quantity', 'Price per Unit', 'Total Amount']].mode())
+retail['Date']=pd.to_datetime(retail['Date'])
+monthly_sales = retail.resample('M', on='Date')['Total Amount'].sum()
+plt.figure(figsize=(12, 6))
+plt.plot(monthly_sales.index, monthly_sales.values, marker='o')
+plt.title('Monthly Sales Trend')
+plt.xlabel('Month')
+plt.ylabel('Total Sales Amount')
+plt.xticks(ticks=monthly_sales.index, labels=[month.strftime('%b %Y') for month in monthly_sales.index], rotation=45)
+plt.grid(True)
+plt.show()
+monthly_category_sales = retail.groupby([retail['Date'].dt.to_period('M'), 'Product Category'])['Total Amount'].sum().reset_index()
+
+pivot_table = monthly_category_sales.pivot(index='Date', columns='Product Category', values='Total Amount').fillna(0)
+
+plt.figure(figsize=(12, 8))
+for category in pivot_table.columns:
+    plt.plot(pivot_table.index.to_timestamp(), pivot_table[category], marker='o', label=category)  # Convert index to timestamp for better plotting
+
+plt.title('Monthly Sales Trend by Product Category')
+plt.xlabel('Month')
+plt.ylabel('Total Sales Amount')
+plt.legend(title='Product Category')
+plt.grid(True)
+plt.xticks(ticks=pivot_table.index.to_timestamp(), labels=[date.strftime('%b %Y') for date in pivot_table.index.to_timestamp()], rotation=45)  # Convert index to timestamp and format the labels
+plt.show()
+
+start_date = '2023-05-01'
+end_date = '2023-05-31'
+data_may = retail[(retail['Date'] >= start_date) & (retail['Date'] <= end_date)]
+
+category_sales_highest_month = data_may.groupby('Product Category')['Total Amount'].sum()
+
+plt.figure(figsize=(10, 6))
+category_sales_highest_month.plot(kind='bar', color='blue')
+plt.title('Sales Contributions by Product Category in May 2023')
+plt.xlabel('Product Category')
+plt.ylabel('Total Sales Amount')
+plt.show()
+
+total_sales_may = data_may['Total Amount'].sum()
+print(f'The total sales in the month of May is: {total_sales_may}')
+start_date = '2023-09-01'
+end_date = '2023-09-30'
+data_september = retail[(retail['Date'] >= start_date) & (retail['Date'] <= end_date)]
+
+category_sales_september = data_september.groupby('Product Category')['Total Amount'].sum()
+
+plt.figure(figsize=(10, 6))
+category_sales_september.plot(kind='bar', color='skyblue')
+plt.title('Sales Contributions by Product Category in September 2023')
+plt.xlabel('Product Category')
+plt.ylabel('Total Sales Amount')
+plt.show()
+
+total_sales_september = data_september['Total Amount'].sum()
+print(f"The total sales in the month of September is: {total_sales_september}")
+date_count = retail['Date'].groupby(retail['Date']).count()
+max_count_date = date_count.idxmax()
+print(f"The date with the highest number of transactions is {max_count_date} with {date_count[max_count_date]} transactions.")s happened.
+sns.boxplot(y=date_count.values).set_title('Number of Transactions by Day')
+retail.boxplot(column='Age',showfliers=True)
+unique= retail['Product Category'].unique()
+for category in unique:
+  print(category)
+sns.boxplot(x=retail['Product Category'],y=retail['Age'],data=retail).set_title('Age distribution by product category')
+sns.boxplot(x=retail['Gender'],y=retail['Age'],data=retail).set_title('Age distribution by Gender')
+print("Number of records based on gender in percentage: ",retail['Gender'].value_counts()/len(retail['Gender']))
+print(retail['Total Amount'].max())
+print(retail['Total Amount'].min())
+retail.hist(column='Product Category',by='Gender')
+pd.crosstab(retail['Gender'],retail['Product Category'],margins=True).plot(kind='bar',figsize=(7,5))
+product_category_distribution = retail['Product Category'].value_counts()
+print(product_category_distribution)
+
+product_category_distribution.plot(kind='bar', figsize=(10, 6), title='Product Category Distribution')
+plt.xlabel('Product Category')
+plt.ylabel('Count')
+plt.show()
+gender_distribution = retail['Gender'].value_counts()
+print(gender_distribution)
+
+gender_distribution.plot(kind='bar', figsize=(8, 6), title='Gender Distribution')
+plt.xlabel('Gender')
+plt.ylabel('Count')
+plt.show()
+gender_distribution_percentage = (gender_distribution / gender_distribution.sum()) * 100
+print(gender_distribution_percentage)
+
+gender_distribution_percentage.plot(kind='pie', autopct='%1.1f%%', startangle=90, figsize=(8, 8), title='Gender Distribution')
+plt.ylabel('')
+plt.show()
+age_bins = [18, 25, 35, 45, 55, 65]
+age_labels = ['18-24', '25-34', '35-44', '45-54', '55-64']
+retail['Age Group'] = pd.cut(retail['Age'], bins=age_bins, labels=age_labels, right=False)
+
+age_distribution = retail['Age Group'].value_counts().sort_index()
+
+age_distribution.plot(kind='bar', figsize=(8, 6), title='Age Group Distribution')
+plt.xlabel('Age Group')
+plt.ylabel('Count')
+plt.xticks(rotation=45)
+plt.show()
+retail['Month'] = retail['Date'].dt.to_period('M')
+
+pivot_table = retail.pivot_table(
+    index='Product Category',
+    columns='Month',
+    values='Total Amount',
+    aggfunc='sum',
+    fill_value=0
+)
+
+# Heatmap of monthly sales
+plt.figure(figsize=(12, 8))
+sns.heatmap(pivot_table, annot=True, fmt=".1f", cmap="YlGnBu", linewidths=.5)
+plt.title('Heatmap of Monthly Sales by Product Category')
+plt.xlabel('Month')
+plt.ylabel('Product Category')
+plt.xticks(rotation=45)
+plt.show()
+# Top Selling Products
+top_selling_products = retail.groupby('Product Category')['Total Amount'].sum().nlargest(10)
+plt.figure(figsize=(12, 6))
+top_selling_products.plot(kind='bar', color='skyblue')
+plt.title('Top Selling Products')
+plt.xlabel('Product Category')
+plt.ylabel('Total Sales Amount')
+plt.xticks(rotation=45)
+plt.show()
+# Customer Gender Analysis
+gender_sales = retail.groupby('Gender')['Total Amount'].sum()
+
+plt.figure(figsize=(10, 6))
+gender_sales.plot(kind='bar', color='skyblue')
+plt.title('Total Sales by Gender')
+plt.xlabel('Gender')
+plt.ylabel('Total Sales Amount')
+plt.xticks(rotation=0)
+plt.show()
+# Product Preferences by Age Group
+age_group_product_sales = retail.groupby(['Age Group', 'Product Category'])['Total Amount'].sum().unstack()
+
+plt.figure(figsize=(12, 8))
+sns.heatmap(age_group_product_sales, annot=True, fmt=".1f", cmap="YlGnBu", linewidths=.5)
+plt.title('Product Preferences by Age Group')
+plt.xlabel('Product Category')
+plt.ylabel('Age Group')
+plt.xticks(rotation=45)
+plt.show()
+gender_product_sales = retail.groupby(['Gender', 'Product Category'])['Total Amount'].sum().unstack()
+
+plt.figure(figsize=(12, 8))
+sns.heatmap(gender_product_sales, annot=True, fmt=".1f", cmap="YlGnBu", linewidths=.5)
+plt.title('Product Preferences by Gender')
+plt.xlabel('Product Category')
+plt.ylabel('Gender')
+plt.xticks(rotation=45)
+plt.show()
+plt.figure(figsize=(12, 6))
+sns.countplot(data=retail, x='Product Category', hue='Gender')
+plt.title('Count Plot: Gender vs Product Category')
+plt.xlabel('Product Category')
+plt.ylabel('Count')
+plt.xticks(rotation=45)
+plt.legend(title='Gender')
+plt.show()
+plt.figure(figsize=(12, 6))
+sns.stripplot(data=retail, x='Age Group', y='Total Amount', jitter=True)
+plt.title('Strip Plot: Total Amount by Age Group')
+plt.xlabel('Age Group')
+plt.ylabel('Total Amount')
+plt.grid(True)
+plt.yticks(range(0,2501,125))
+plt.xticks(rotation=45)
+plt.show()
+plt.figure(figsize=(12, 6))
+sns.swarmplot(data=retail, x='Age Group', y='Total Amount',size=2)
+plt.title('Swarm Plot: Total Amount by Age Group')
+plt.xlabel('Age Group')
+plt.ylabel('Total Amount')
+plt.xticks(rotation=45)
+plt.show()
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=retail, x='Quantity', y='Total Amount', hue='Product Category', alpha=1)
+plt.title('Scatter Plot: Total Amount vs Quantity')
+plt.xlabel('Quantity')
+plt.ylabel('Total Amount')
+plt.legend(title='Product Category', bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.show()
+plt.figure(figsize=(12, 6))
+sns.catplot(data=retail, x='Age Group', y='Total Amount', hue='Gender', kind='strip', jitter=True, aspect=2)
+plt.title('Factor Plot: Total Amount by Age Group and Gender')
+plt.xlabel('Age Group')
+plt.ylabel('Total Amount')
+plt.xticks(rotation=45)
+plt.show()
+# Scatter Plot: Total Amount vs Unit Price
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=retail, x='Price per Unit', y='Total Amount', hue='Product Category', alpha=0.6)
+plt.title('Scatter Plot: Total Amount vs Unit Price')
+plt.xlabel('Unit Price')
+plt.ylabel('Total Amount')
+plt.legend(title='Product Category', loc='upper left')
+plt.show()
+# bar plot
+plt.figure(figsize=(14,8))
+sns.barplot(x='Age Group', y='Quantity', hue= 'Product Category', data=retail)
+plt.title('Product Category purchased by Age group', fontsize=14)
+plt.xlabel('Age Group', fontsize=10)
+plt.ylabel('Quantity Purchased', fontsize=10)
+plt.show()
+plt.figure(figsize=(12,8))
+sns.swarmplot(x='Product Category', y='Age', hue='Gender', data=retail, palette='Set2')
+plt.title('Distribution of Age and Gender across Product Category', fontsize=16)
+plt.xlabel('Product Category', fontsize=14)
+plt.ylabel('Age', fontsize=14)
+plt.legend(title='Gender', loc ='upper right', fontsize=10)
+plt.show()
+plt.figure(figsize=(18, 6))
+
+# Plot the histograms
+plt.subplot(131)
+plt.hist(retail['Quantity'], bins=20, color='#483D8B', edgecolor='black', alpha=0.7)
+plt.title('Histogram of Quantity', fontsize=14, fontweight='bold')
+plt.xlabel('Quantity', fontsize=12)
+plt.ylabel('Frequency', fontsize=12)
+
+plt.subplot(132)
+plt.hist(retail['Price per Unit'], bins=20, color='#483D8B', edgecolor='black', alpha=0.7)
+plt.title('Histogram of Price per Unit', fontsize=14, fontweight='bold')
+plt.xlabel('Price per Unit', fontsize=12)
+plt.ylabel('Frequency', fontsize=12)
+
+plt.subplot(133)
+plt.hist(retail['Total Amount'], bins=20, color='#483D8B', edgecolor='black', alpha=0.7)
+plt.title('Histogram of Total Amount', fontsize=14, fontweight='bold')
+plt.xlabel('Total Amount', fontsize=12)
+plt.ylabel('Frequency', fontsize=12)
+
+plt.suptitle('Histogram of all continuous variables', fontsize=20, fontweight='bold')
+plt.figure(figsize=(18, 6))
+
+# Plot the histograms
+plt.subplot(131)
+plt.hist(retail['Quantity'], bins=20, color='#483D8B', edgecolor='black', alpha=0.7)
+plt.title('Histogram of Quantity', fontsize=14, fontweight='bold')
+plt.xlabel('Quantity', fontsize=12)
+plt.ylabel('Frequency', fontsize=12)
+
+plt.subplot(132)
+plt.hist(retail['Price per Unit'], bins=20, color='#483D8B', edgecolor='black', alpha=0.7)
+plt.title('Histogram of Price per Unit', fontsize=14, fontweight='bold')
+plt.xlabel('Price per Unit', fontsize=12)
+plt.ylabel('Frequency', fontsize=12)
+
+plt.subplot(133)
+plt.hist(retail['Total Amount'], bins=20, color='#483D8B', edgecolor='black', alpha=0.7)
+plt.title('Histogram of Total Amount', fontsize=14, fontweight='bold')
+plt.xlabel('Total Amount', fontsize=12)
+plt.ylabel('Frequency', fontsize=12)
+
+plt.suptitle('Histogram of all continuous variables', fontsize=20, fontweight='bold')
+plt.tight_layout()
+plt.show()
+cutoff_date = pd.to_datetime('2024-06-30')
+retail_cutoff = retail[retail['Date'] < cutoff_date]
+retail_cutoff_sorted = retail_cutoff.sort_values(by='Total Amount', ascending=False)
+print(retail_cutoff_sorted[['Customer ID','Total Amount','Product Category']].head(5))
+
