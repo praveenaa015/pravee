@@ -1,0 +1,130 @@
+import numpy
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os;
+os.listdir('/kaggle/input/')
+food=pd.read_csv('/kaggle/input/nutrition-facts/menu.csv') #importing the dataset
+food
+print("Dimension of the dataset:", food.shape)
+print("Size of the dataset: ", food.size)
+print("Columns in the dataset: ", food.keys())
+print("Information of the dataset: \n",food.info())
+print("After removing duplicates: \n",food.drop_duplicates(inplace=True))
+print("Size of the dataset after removing duplicates: \n",food.size)
+print("Description of the dataset: \n",food.describe())
+# Pie chart for the proportion of different categories
+category_counts = food['Category'].value_counts()
+
+plt.figure(figsize=(8, 8))
+plt.pie(category_counts, labels=category_counts.index, autopct='%1.1f%%', colors=plt.cm.Paired.colors)
+plt.title('Proportion of Different Categories')
+plt.show()
+plt.figure(figsize=(14, 8))
+sns.boxplot(x='Category', y='Calories', data=food)
+plt.xticks(rotation=45)
+plt.title('Calories by Category')
+plt.xlabel('Category')
+plt.ylabel('Calories')
+plt.show()
+food['Calories'].idxmax()
+food.at[82, 'Item']
+food['Protein'].idxmax()
+food['Cholesterol'].idxmax()
+food.at[31, 'Item']
+food[['Saturated Fat (% Daily Value)','Saturated Fat']].idxmax()
+value_1 = food.iloc[253, 1]
+value_2 = food.iloc[32, 1]
+print(value_1," ", value_2)
+item_with_highest_calories = food.loc[food.groupby(['Category'])['Calories'].idxmax()]
+item_with_highest_calories_sorted = item_with_highest_calories.sort_values(by='Calories', ascending=False)[['Category','Item', 'Calories']]
+print(item_with_highest_calories_sorted)
+item_with_lowest_calories = food.loc[food.groupby(['Category'])['Calories'].idxmin()]
+item_with_lowest_calories_sorted = item_with_lowest_calories.sort_values(by='Calories', ascending=False)[['Category','Item', 'Calories']]
+print(item_with_lowest_calories_sorted)
+def plot_histogram(column, bins=30):
+    plt.figure(figsize=(10, 6))
+    sns.histplot(food[column], bins=bins, kde=True)
+    plt.title(f'Distribution of {column}')
+    plt.xlabel(column)
+    plt.ylabel('Frequency')
+    plt.show()
+
+columns_to_plot = ['Calories', 'Total Fat', 'Saturated Fat', 'Cholesterol', 'Sodium', 'Carbohydrates', 'Sugars', 'Protein']
+for column in columns_to_plot:
+    plot_histogram(column)
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x=food['Calories'], y=food['Protein'])
+plt.title('Calories vs Protein')
+plt.xlabel('Calories')
+plt.ylabel('Protein')
+plt.show()
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x=food['Calories'], y=food['Total Fat'])
+plt.title('Calories vs Total Fat')
+plt.xlabel('Calories')
+plt.ylabel('Total Fat')
+plt.show()
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x=food['Calories'], y=food['Sugars'])
+plt.title('Calories vs Sugar')
+plt.xlabel('Calories')
+plt.ylabel('Sugar')
+plt.show()
+plot=sns.stripplot(x="Category", y='Sugars', data=food)
+plt.setp(plot.get_xticklabels(), rotation=70)
+plt.title('Sugar Content')
+plt.show()
+plot=sns.stripplot(x="Category", y='Sodium', data=food)
+plt.setp(plot.get_xticklabels(), rotation=70)
+plt.title('Sodium Content')
+plt.show()
+plot=sns.stripplot(x="Category", y='Protein', data=food)
+plt.setp(plot.get_xticklabels(), rotation=70)
+plt.title('Protein Content')
+plt.show()
+plot=sns.stripplot(x="Category", y='Total Fat', data=food)
+plt.setp(plot.get_xticklabels(), rotation=70)
+plt.title('Total Fat Content')
+plt.show()
+plot=sns.stripplot(x="Category", y='Cholesterol', data=food)
+plt.setp(plot.get_xticklabels(), rotation=70)
+plt.title('Cholesterol Content')
+plt.show()
+# Select only numeric columns for the correlation matrix
+numeric_data = food.select_dtypes(include=['float64', 'int64'])
+# Correlation Heatmap
+plt.figure(figsize=(14, 10))
+correlation_matrix = numeric_data.corr()
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', linewidths=0.5)
+plt.title('Correlation Heatmap of Nutritional Values')
+plt.show()
+sorted_items_by_calories = food.sort_values(by=['Category', 'Calories'], ascending=[True, False]) #Sort by Calories
+
+# Print the sorted items by category
+for category, items in sorted_items_by_calories.groupby('Category'):
+    pd.set_option('display.max_rows', None)  # Show all rows
+    pd.set_option('display.max_columns', None)  # Show all columns
+    pd.set_option('display.width', None) #Auto-adjust width
+    print(f"Category: {category}")
+    print(items[['Item', 'Calories']])
+    print("\n")
+
+# Create a bar plot to show the top items with the highest calories in each category
+plt.figure(figsize=(12, 6))
+top_items = sorted_items_by_calories.groupby('Category').head(1)  # Select top item in each category
+plt.bar(top_items['Category'], top_items['Calories'], color='skyblue')
+plt.xlabel('Category')
+plt.ylabel('Calories')
+plt.title('Top Item with Highest Calories in Each Category')
+plt.xticks(rotation=45)
+plt.show()
+
+# Create a pie chart to show the distribution of calories among different categories
+plt.figure(figsize=(8, 8))
+total_calories_per_category = food.groupby('Category')['Calories'].sum()
+plt.pie(total_calories_per_category, labels=total_calories_per_category.index, autopct='%1.1f%%', startangle=140, colors=plt.cm.tab20.colors)
+plt.axis('equal')
+plt.title('Calories Distribution by Category')
+plt.show()
+
